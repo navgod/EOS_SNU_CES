@@ -56,7 +56,7 @@ int8u_t eos_receive_message(eos_mqueue_t *mq, void *message, int32s_t timeout)
 {
     // To be filled by students: Project 4
     eos_tcb_t *current_task = eos_get_current_task();
-    if(eos_acquire_semaphore(&mq->getsem, timeout) == 0) {
+    while(eos_acquire_semaphore(&mq->getsem, timeout) == 0) {
         if (timeout == 0){
             if (mq->getsem.queue_type == FIFO)
                 _os_add_node_tail(&mq->getsem.wait_queue, &current_task->wait_queue);
@@ -72,7 +72,6 @@ int8u_t eos_receive_message(eos_mqueue_t *mq, void *message, int32s_t timeout)
             eos_sleep(0);
         }
     }
-    PRINT("here\n");
     for (int i = 0; i < mq->msg_size; i++) {
         ((int8u_t *)message)[i] = mq->queue_start[mq->front_index];
         mq->front_index = (mq->front_index + 1) % (mq->queue_size * mq->msg_size);

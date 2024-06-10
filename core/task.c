@@ -37,15 +37,17 @@ int32u_t eos_create_task(eos_tcb_t *task, addr_t sblock_start, size_t sblock_siz
     task->priority = priority;
     task->sp = context_ptr;
 
-    task->node = (_os_node_t *)malloc(sizeof(_os_node_t));
-    task->node->ptr_data = task;
-    task->node->priority = priority;
+    task->node.ptr_data = task;
+    task->node.priority = priority;
 
+    task->wait_queue.ptr_data = task;
+    task->wait_queue.priority = priority;
+    
     task->alarm.alarm_queue_node.ptr_data = &task->alarm;
     task->alarm.handler = entry;
     task->alarm.arg = arg;
 
-    _os_add_node_priority(&_os_ready_queue[priority], task->node);
+    _os_add_node_priority(&_os_ready_queue[priority], &task->node);
     _os_set_ready(priority);
     
     return 0;
@@ -69,7 +71,7 @@ void eos_schedule() {
         current_task->sp = old_task_sp;
         if (current_task->task_state == RUNNING) {
             current_task->task_state = READY;
-            _os_add_node_priority(&_os_ready_queue[current_task->priority], current_task->node);
+            _os_add_node_priority(&_os_ready_queue[current_task->priority], &current_task->node);
             _os_set_ready(current_task->priority);
         }
     }
@@ -182,7 +184,7 @@ void _os_wakeup_sleeping_task(void *arg) {
     // To be filled by students: Project 3
     eos_tcb_t* task = (eos_tcb_t*)arg;
     task->task_state = READY;
-    _os_add_node_priority(&_os_ready_queue[task->priority], task->node);
+    _os_add_node_priority(&_os_ready_queue[task->priority], &task->node);
     _os_set_ready(task->priority);
     eos_schedule();
 }

@@ -236,7 +236,7 @@ typedef struct tcb {
     int32u_t priority;
     int32u_t period;
     addr_t sp;
-    _os_node_t *node;
+    _os_node_t node;
     _os_node_t wait_queue;
     eos_alarm_t alarm;
 } eos_tcb_t;

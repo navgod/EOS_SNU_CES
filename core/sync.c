@@ -15,7 +15,6 @@ void eos_init_semaphore(eos_semaphore_t *sem, int32u_t initial_count, int8u_t qu
     sem->count = initial_count;
     sem->wait_queue = NULL;
     sem->queue_type = queue_type;
-
 }
 
 // 0 for fail 1 for success
@@ -24,34 +23,36 @@ int32u_t eos_acquire_semaphore(eos_semaphore_t *sem, int32s_t timeout)
     // To be filled by students: Project 4
     int32u_t flag = hal_disable_interrupt();
     eos_tcb_t *current_task = eos_get_current_task();
-    
-    if (sem->count > 0) {
+    while (1)
+    {
+        if (sem->count > 0) {
         sem->count--;
         hal_restore_interrupt(flag);
         return 1;
-    }
-    else {
-        if (timeout == -1)
-        {
-            hal_restore_interrupt(flag);
-            return -1;
-        }
-        else if (timeout == 0)
-        {
-            if (sem->queue_type == FIFO)
-                _os_add_node_tail(&sem->wait_queue, &current_task->wait_queue);
-            else
-                _os_add_node_priority(&sem->wait_queue, &current_task->wait_queue);
-            hal_restore_interrupt(flag);
-            eos_sleep(0);
         }
         else {
-            if (sem->queue_type == FIFO)
-                _os_add_node_tail(&sem->wait_queue, &current_task->wait_queue);
-            else
-                _os_add_node_priority(&sem->wait_queue, &current_task->wait_queue);
-            hal_restore_interrupt(flag);
-            eos_sleep(timeout);
+            if (timeout == -1)
+            {
+                hal_restore_interrupt(flag);
+                return 0;
+            }
+            else if (timeout == 0)
+            {
+                if (sem->queue_type == FIFO)
+                    _os_add_node_tail(&sem->wait_queue, &current_task->wait_queue);
+                else
+                    _os_add_node_priority(&sem->wait_queue, &current_task->wait_queue);
+                hal_restore_interrupt(flag);
+                eos_sleep(0);
+            }
+            else {
+                if (sem->queue_type == FIFO)
+                    _os_add_node_tail(&sem->wait_queue, &current_task->wait_queue);
+                else
+                    _os_add_node_priority(&sem->wait_queue, &current_task->wait_queue);
+                hal_restore_interrupt(flag);
+                eos_sleep(timeout);
+            }
         }
     }
 }
@@ -62,10 +63,9 @@ void eos_release_semaphore(eos_semaphore_t *sem)
     // To be filled by students: Project 4
     int32u_t flag = hal_disable_interrupt();
     eos_tcb_t *next_task = NULL;
-
+    sem->count++;
     if(sem->wait_queue != NULL) {
         next_task = sem->wait_queue->ptr_data;
-        sem->count++;
     }
     if (next_task != NULL) {
         _os_remove_node(&sem->wait_queue, &next_task->wait_queue);
