@@ -98,6 +98,7 @@ void eos_trigger_counter(eos_counter_t* counter)
             }
         }
     }
+    eos_schedule();
 }
 
 

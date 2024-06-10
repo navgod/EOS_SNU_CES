@@ -76,7 +76,6 @@ void eos_schedule() {
         }
     }
     int32u_t next_priority = _os_get_highest_priority();
-    
     _os_node_t *next_node = _os_ready_queue[next_priority];
     if (next_node != NULL) {
         eos_tcb_t *next_task = next_node->ptr_data; //get tcb
@@ -186,5 +185,4 @@ void _os_wakeup_sleeping_task(void *arg) {
     task->task_state = READY;
     _os_add_node_priority(&_os_ready_queue[task->priority], &task->node);
     _os_set_ready(task->priority);
-    eos_schedule();
 }

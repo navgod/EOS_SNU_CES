@@ -30,9 +30,9 @@ void eos_init_mqueue(eos_mqueue_t *mq, void *queue_start, int16u_t queue_size, i
 int8u_t eos_send_message(eos_mqueue_t *mq, void *message, int32s_t timeout) 
 {
     // To be filled by students: Project 4
-    if(eos_acquire_semaphore(&mq->putsem, timeout) == 0){
+    while(eos_acquire_semaphore(&mq->putsem, timeout) == 0){
         //PRINT("here\n");
-        if (timeout == 0)
+        if (timeout == -1)
             return 0;
         else{
             eos_tcb_t *current_task = eos_get_current_task();
@@ -40,7 +40,7 @@ int8u_t eos_send_message(eos_mqueue_t *mq, void *message, int32s_t timeout)
                 _os_add_node_tail(&mq->putsem.wait_queue, &current_task->wait_queue);
             else
                 _os_add_node_priority(&mq->putsem.wait_queue, &current_task->wait_queue);
-            eos_sleep(0);
+            eos_sleep(timeout);
         }
     }
     for (int i = 0; i < mq->msg_size; i++) {
@@ -57,19 +57,15 @@ int8u_t eos_receive_message(eos_mqueue_t *mq, void *message, int32s_t timeout)
     // To be filled by students: Project 4
     eos_tcb_t *current_task = eos_get_current_task();
     while(eos_acquire_semaphore(&mq->getsem, timeout) == 0) {
-        if (timeout == 0){
-            if (mq->getsem.queue_type == FIFO)
-                _os_add_node_tail(&mq->getsem.wait_queue, &current_task->wait_queue);
-            else
-                _os_add_node_priority(&mq->getsem.wait_queue, &current_task->wait_queue);
-            eos_sleep(0);
+        if (timeout == -1){
+            return 0;
         }
         else{
             if (mq->getsem.queue_type == FIFO)
                 _os_add_node_tail(&mq->getsem.wait_queue, &current_task->wait_queue);
             else
                 _os_add_node_priority(&mq->getsem.wait_queue, &current_task->wait_queue);
-            eos_sleep(0);
+            eos_sleep(timeout);
         }
     }
     for (int i = 0; i < mq->msg_size; i++) {
